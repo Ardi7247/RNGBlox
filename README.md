@@ -110,4 +110,5 @@ Randomly shuffles a table using the RNG object.
 <summary>Documentation</summary>
 (self: RNG, tb: {}) -> (any, any)
 </details>
+
 Returns two values: (value, index) which are randomly picked from a table such that table[index] = value. Index or value can be of any type.
