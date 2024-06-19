@@ -22,6 +22,7 @@ Read only. Do not attempt to edit either of these.
 
 ## Methods
 ### RNG:Clone()
+<details>
 <summary>Documentation</summary>
 (self: RNG) -> (RNG)
 </details>
