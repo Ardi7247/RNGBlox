@@ -7,7 +7,7 @@ export type RNG = {
 		self:RNG,
 		Iterations:number
 	)->();
-	
+
 	NextNumber: (
 		self:RNG,
 		min:number?,
@@ -39,7 +39,7 @@ export type RNG = {
 		MaxB: number?
 	) -> (Color3);
 	NextBrickColor: (self:RNG) -> (BrickColor);
-	
+
 	Shuffle: (
 		self:RNG,
 		tb: {}
@@ -48,13 +48,15 @@ export type RNG = {
 		self:RNG,
 		tb: {}
 	) -> (any,any);
-	
-	State:{
+
+	GetIteration: (self:RNG) -> (number);
+	GetSeed: (self:RNG) -> (number);
+
+	_state:{
 		Iteration:number;
 		Seed:number;
+		RandomObject: Random;
 	};
-	
-	[any]: Random; -- Someday I'll do this in less of a hack way
 }
 
 local BrickColors = {}
@@ -68,37 +70,37 @@ for i = 1, 1032 do
 end
 
 local function Clone(self:RNG):RNG
-	return New(self.RNG:Clone(), self.State)
+	return New(self._state.RandomObject:Clone(), self._state)
 end
 
 local function LoadState(self:RNG,state:number)
-	local stepsNeeded = state-self.State.Iteration
+	local stepsNeeded = state-self._state.Iteration
 	if stepsNeeded < 0 then
-		self.RNG = Random.new(self.State.Seed)
-		self.State.Iteration = 0
+		self._state.RandomObject = Random.new(self._state.Seed)
+		self._state.Iteration = 0
 		stepsNeeded = state
 	elseif stepsNeeded == 0 then
 		return
 	end
 	for i = 1, stepsNeeded do
-		self.RNG:NextNumber()
+		self._state.RandomObject:NextNumber()
 	end
-	self.State.Iteration = state
+	self._state.Iteration = state
 end
 
 local function NextNumber(self:RNG,min:number?,max:number?):number
-	self.State.Iteration += 1
-	return(self.RNG:NextNumber(min or 0,max or 1))
+	self._state.Iteration += 1
+	return(self._state.RandomObject:NextNumber(min or 0,max or 1))
 end
 
 local function NextInteger(self:RNG,min:number,max:number):number
-	self.State.Iteration += 1
-	return(self.RNG:NextInteger(min,max))
+	self._state.Iteration += 1
+	return(self._state.RandomObject:NextInteger(min,max))
 end
 
 local function NextUnitVector3(self:RNG):Vector3
-	self.State.Iteration += 1
-	return(self.RNG:NextUnitVector())
+	self._state.Iteration += 1
+	return(self._state.RandomObject:NextUnitVector())
 end
 
 local function NextUnitVector2(self:RNG):Vector2
@@ -121,20 +123,20 @@ local function NextColor(
 	-- Yarghh, Below there be code to set default values fer RGB/HSV if no range is provided.
 	local MinHue:number = MinHue or 0
 	local MaxHue:number = MaxHue or RGB and 255 or 1
-	
+
 	local MinSaturation:number = MinSaturation or 0
 	local MaxSaturation:number = MaxSaturation or RGB and 255 or 1
-	
+
 	local MinValue:number = MinValue or 0
 	local MaxValue:number = MaxValue or RGB and 255 or 1
-	
+
 	local Hue = self:NextNumber(MinHue,MaxHue)
 	local Saturation = self:NextNumber(MinSaturation,MaxSaturation)
 	local Value = self:NextNumber(MinValue,MaxValue)
 	if RGB then
 		return(Color3.fromRGB(Hue, Saturation, Value))
 	end
-	
+
 	return(Color3.fromHSV(Hue, Saturation, Value))
 end
 
@@ -156,7 +158,7 @@ local function NextColorHSV(
 		MaxSaturation,
 		MinValue,
 		MaxValue
-	))
+		))
 end
 local function NextColorRGB(
 	self:RNG,
@@ -198,6 +200,14 @@ local function PickFromList(self:RNG, tb:{}): (any,any)
 	return tb[selectedIndex], selectedIndex
 end
 
+local function GetIteration(self:RNG): number
+	return self._state.Iteration
+end
+
+local function GetSeed(self:RNG): number
+	return self._state.Seed
+end
+
 function New(
 	rng:Random,
 	State:{
@@ -206,13 +216,12 @@ function New(
 	}
 ):RNG
 	local object = {
-		
-		State = {
+
+		_state = {
 			Iteration = 0;
-			Seed = State.Seed
+			Seed = State.Seed;
+			RandomObject = rng;
 		};
-		
-		RNG = rng;
 		Clone = Clone;
 		LoadState = LoadState;
 
@@ -220,20 +229,23 @@ function New(
 		NextInteger = NextInteger;
 		NextUnitVector3 = NextUnitVector3;
 		NextUnitVector2 = NextUnitVector2;
-		
+
 		NextColorHSV = NextColorHSV;
 		NextColorRGB = NextColorRGB;
 		NextBrickColor = NextBrickColor;
-		
+
 		Shuffle = ShuffleTable;
 		RandValueAndIndexFromList = PickFromList;
 		
+		GetIteration = GetIteration;
+		GetSeed = GetSeed
+
 	}
-	
+
 	if State.Iteration then
 		object:LoadState(State.Iteration)
 	end
-	
+
 	return object
 end
 
@@ -248,4 +260,3 @@ return {
 		}))
 	end;
 }
-

@@ -11,16 +11,12 @@ My random library is a simple, object-oriented module for seeded pseudo-random n
 </details>
 Basic constructor for an RNG object with optional parameters.
 
-## Properties
-### RNG.State
-<details>
-<summary>Documentation</summary>
-.Iteration: number; <br>
-.Seed: number;
-</details>
-Read only. Do not attempt to edit either of these.
-
 ## Methods
+### RNG:GetIteration()
+(self: RNG) -> (number)
+### RNG:GetSeed()
+(self: RNG) -> (number)
+
 ### RNG:Clone()
 <details>
 <summary>Documentation</summary>
